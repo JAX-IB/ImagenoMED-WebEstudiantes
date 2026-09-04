@@ -14,7 +14,7 @@ Module["ready"] = new Promise((resolve, reject) => {
  readyPromiseReject = reject;
 });
 
-[ "_memory", "___indirect_function_table", "_jsHaveAsyncify", "_jsHaveJspi", "___asyncjs__qt_jspi_suspend_js", "_qt_jspi_resume_js", "_qt_jspi_can_resume_js", "_init_jspi_support_js", "_qt_asyncify_suspend_js", "_qt_asyncify_resume_js", "_main", "onRuntimeInitialized" ].forEach(prop => {
+[ "_memory", "_js_setItem", "_js_removeItem", "_js_getItem", "_downloadPDF", "___indirect_function_table", "_jsHaveAsyncify", "_jsHaveJspi", "___asyncjs__qt_jspi_suspend_js", "_qt_jspi_resume_js", "_qt_jspi_can_resume_js", "_init_jspi_support_js", "_qt_asyncify_suspend_js", "_qt_asyncify_resume_js", "_main", "onRuntimeInitialized" ].forEach(prop => {
  if (!Object.getOwnPropertyDescriptor(Module["ready"], prop)) {
   Object.defineProperty(Module["ready"], prop, {
    get: () => abort("You are getting " + prop + " on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js"),
@@ -697,6 +697,38 @@ function unexportedRuntimeSymbol(sym) {
 
 function dbg(...args) {
  console.warn(...args);
+}
+
+function js_setItem(key, val) {
+ localStorage.setItem(UTF8ToString(key), UTF8ToString(val));
+}
+
+function js_removeItem(key) {
+ localStorage.removeItem(UTF8ToString(key));
+}
+
+function js_getItem(key) {
+ var value = localStorage.getItem(UTF8ToString(key));
+ if (value === null) return 0;
+ var lengthBytes = lengthBytesUTF8(value) + 1;
+ var stringOnWasmHeap = _malloc(lengthBytes);
+ stringToUTF8(value, stringOnWasmHeap, lengthBytes);
+ return stringOnWasmHeap;
+}
+
+function downloadPDF(data, size, filename) {
+ const bytes = HEAPU8.slice(data, data + size);
+ const blob = new Blob([ bytes ], {
+  type: "application/pdf"
+ });
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement("a");
+ a.href = url;
+ a.download = UTF8ToString(filename);
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ URL.revokeObjectURL(url);
 }
 
 function jsHaveAsyncify() {
@@ -11335,6 +11367,7 @@ var wasmImports = {
  /** @export */ _munmap_js: __munmap_js,
  /** @export */ _tzset_js: __tzset_js,
  /** @export */ abort: _abort,
+ /** @export */ downloadPDF: downloadPDF,
  /** @export */ emscripten_async_call: _emscripten_async_call,
  /** @export */ emscripten_cancel_animation_frame: _emscripten_cancel_animation_frame,
  /** @export */ emscripten_clear_timeout: _emscripten_clear_timeout,
@@ -11717,6 +11750,9 @@ var wasmImports = {
  /** @export */ invoke_vjiii: invoke_vjiii,
  /** @export */ jsHaveAsyncify: jsHaveAsyncify,
  /** @export */ jsHaveJspi: jsHaveJspi,
+ /** @export */ js_getItem: js_getItem,
+ /** @export */ js_removeItem: js_removeItem,
+ /** @export */ js_setItem: js_setItem,
  /** @export */ llvm_eh_typeid_for: _llvm_eh_typeid_for,
  /** @export */ proc_exit: _proc_exit,
  /** @export */ qt_asyncify_resume_js: qt_asyncify_resume_js,
@@ -11770,9 +11806,9 @@ var ___cxa_can_catch = createExportWrapper("__cxa_can_catch");
 
 var ___cxa_is_pointer_type = createExportWrapper("__cxa_is_pointer_type");
 
-var ___start_em_js = Module["___start_em_js"] = 8761752;
+var ___start_em_js = Module["___start_em_js"] = 8762296;
 
-var ___stop_em_js = Module["___stop_em_js"] = 8762842;
+var ___stop_em_js = Module["___stop_em_js"] = 8764225;
 
 function invoke_ii(index, a1) {
  var sp = stackSave();
